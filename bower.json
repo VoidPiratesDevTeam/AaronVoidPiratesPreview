@@ -1,0 +1,6 @@
+{
+  "name": "Void Pirates",
+  "dependencies": {
+    "Keypress": "~2.0.3"
+  }
+}
