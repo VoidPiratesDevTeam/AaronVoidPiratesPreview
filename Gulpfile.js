@@ -1,12 +1,19 @@
 var gulp = require('gulp');
 var inject = require('gulp-inject');
 var server = require('gulp-express'),
-    merge = require('merge-stream');
-    // browserify = require('gulp-browserify');
+    merge = require('merge-stream'),
+    browserify = require('gulp-browserify');
+
 
 gulp.task('index', function () {
     var target = gulp.src('./client/index.html');
-    var sources = gulp.src(
+    var browserified = gulp.src('./client/index.js')
+        .pipe(browserify({
+            debug: true,
+            insertGlobals: true,
+        }));
+
+    var jsSources = gulp.src(
         [
             './node_modules/long/dist/Long.js',
             './node_modules/bytebuffer/dist/ByteBufferAB.js',
@@ -14,12 +21,19 @@ gulp.task('index', function () {
             './node_modules/socket.io-client/socket.io.js',
             './bower_components/Keypress/keypress.js',
             './bower_components/pixi/bin/pixi.dev.js',
-            './client/index.js',
-            './client/index.css',
-            './shared/line/messages.proto',
             './node_modules/underscore/underscore.js'
         ]
-    ).pipe(gulp.dest('./_build/client/static/'));
+    )
+
+    var otherSources = gulp.src(
+        [
+            './client/index.css',
+            './shared/line/messages.proto'
+        ]
+    )
+
+    var sources = merge(browserified, jsSources, otherSources)
+        .pipe(gulp.dest('./_build/client/static/'));
 
     return target.pipe(inject(sources, {ignorePath: '_build/client/'}))
         .pipe(gulp.dest('./_build/client/'));

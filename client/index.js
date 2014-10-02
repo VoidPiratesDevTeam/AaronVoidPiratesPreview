@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function(){
     'use strict';
 
+    var rendering = require('./rendering');
+
     /* Server Communication */
 
     var ProtoBuf = dcodeIO.ProtoBuf;
