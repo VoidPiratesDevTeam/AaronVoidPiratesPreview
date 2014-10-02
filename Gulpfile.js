@@ -4,7 +4,8 @@ var gulp = require('gulp'),
     merge = require('merge-stream'),
     browserify = require('gulp-browserify'),
     uglify = require('gulp-uglify'),
-    concat = require('gulp-concat');
+    concat = require('gulp-concat'),
+    clean = require('gulp-clean');
 
 var DEBUG = true;
 
@@ -85,5 +86,9 @@ gulp.task('watch', ['default'], function(){
     '!./node_modules'], ['default'])
 })
 
+gulp.task('clean', function(){
+    return gulp.src('./_build/', {read: false})
+        .pipe(clean());
+})
 
 gulp.task('default', ['index', 'assets', 'server'])
