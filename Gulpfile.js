@@ -66,7 +66,8 @@ gulp.task('run', ['default'], function(){
 
 
 gulp.task('watch', ['default'], function(){
-    gulp.watch(['./**/*', '!./_build/**/*'], ['default'])
+    gulp.watch(['./**/*', '!./_build/**/*', '!./bower_components',
+    '!./node_modules'], ['default'])
 })
 
 
