@@ -8,9 +8,11 @@ var gulp = require('gulp'),
     clean = require('gulp-clean');
 
 var DEBUG = true;
+var CODE_DIR = './src/'
+var BUILD_DIR = '_build/'
 
 var clientJS = function() {
-    var clientLibraries = gulp.src('./client/index.js', { read: false })
+    var clientLibraries = gulp.src(CODE_DIR+'client/index.js', { read: false })
         .pipe(browserify({
             debug: DEBUG,
             insertGlobals: DEBUG,
@@ -39,55 +41,57 @@ var clientJS = function() {
 
 
 gulp.task('index', function () {
-    var target = gulp.src('./client/index.html');
+    var target = gulp.src(CODE_DIR+'client/index.html');
 
     var otherSources = gulp.src(
         [
-            './client/index.css',
-            './shared/line/messages.proto'
+            CODE_DIR+'client/index.css',
+            CODE_DIR+'shared/line/messages.proto'
         ]
     )
 
     var sources = merge(clientJS(), otherSources)
-        .pipe(gulp.dest('./_build/client/static/'));
+        .pipe(gulp.dest(BUILD_DIR+'client/static/'));
 
-    return target.pipe(inject(sources, {ignorePath: '_build/client/'}))
-        .pipe(gulp.dest('./_build/client/'));
+    return target.pipe(inject(sources, {ignorePath: BUILD_DIR+'client/'}))
+        .pipe(gulp.dest(BUILD_DIR+'client/'));
 });
 
 
 gulp.task('server', function(){
     var server, world;
-    server = gulp.src('./server/**/*.js')
-        .pipe(gulp.dest('./_build/server/'))
-    world = gulp.src('./world/**/*.js')
-        .pipe(gulp.dest('./_build/world/'))
+    server = gulp.src(CODE_DIR+'server/**/*.js')
+        .pipe(gulp.dest(BUILD_DIR+'server/'))
+    world = gulp.src(CODE_DIR+'world/**/*.js')
+        .pipe(gulp.dest(BUILD_DIR+'world/'))
 
     return merge(server, world);
 });
 
 
 gulp.task('assets', function(){
-    return gulp.src('./client/assets/**/*')
-        .pipe(gulp.dest('./_build/client/assets/'))
+    return gulp.src(CODE_DIR+'client/assets/**/*')
+        .pipe(gulp.dest(BUILD_DIR+'client/assets/'))
 })
 
 
 gulp.task('run', ['default'], function(){
     server.run({
-        file: '_build/server/index.js'
+        file: BUILD_DIR+'server/index.js'
     });
-    gulp.watch('./_build/**/*', server.run)
+    gulp.watch(BUILD_DIR+'**/*', server.run)
 })
 
 
 gulp.task('watch', ['default'], function(){
-    gulp.watch(['./**/*', '!./_build/**/*', '!./bower_components',
-    '!./node_modules'], ['default'])
+    gulp.watch(
+        [CODE_DIR],
+        ['default']
+    )
 })
 
 gulp.task('clean', function(){
-    return gulp.src('./_build/', {read: false})
+    return gulp.src(BUILD_DIR+'', {read: false})
         .pipe(clean());
 })
 
