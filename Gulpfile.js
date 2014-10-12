@@ -8,20 +8,51 @@ var gulp = require('gulp'),
     coffee = require('gulp-coffee'),
     clean = require('gulp-clean'),
     debounce = require('debounce'),
+    gIf = require('gulp-if'),
     mocha = require('gulp-mocha');
 
 var DEBUG = true;
 var CODE_DIR = 'src/'
 var BUILD_DIR = '_build/'
 
-var clientJS = function() {
-    var clientLibraries = gulp.src(CODE_DIR+'client/index.js', { read: false })
+
+var cCoffee = function(){return gIf(/.*\.coffee/, coffee())};
+var cMinify = function(){return gIf(!DEBUG, merge(concat('index.out.js'), uglify()))};
+
+gulp.task('default', ['server', 'client']);
+
+gulp.task('watch', function(){
+    return gulp.watch([CODE_DIR+'/**/*'], ['default']);
+});
+
+gulp.task('clean', function() {
+    return gulp.src(BUILD_DIR, {read: false})
+        .pipe(clean())
+})
+
+gulp.task('run', function() {
+    server.run({file: BUILD_DIR+'server/server/index.js'});
+    return gulp.watch(BUILD_DIR+'**/*', debounce(server.run))
+});
+
+gulp.task('server', function() {
+    return gulp.src(CODE_DIR+'/**/*')
+        .pipe(cCoffee())
+        .pipe(gulp.dest(BUILD_DIR+'/server/'))
+});
+
+gulp.task('client', function() {
+    var all = gulp.src([CODE_DIR+'/client/**/*'])
+
+    var css = gulp.src([CODE_DIR+'/client/**/*.css'])
+
+    var compiled = gulp.src(CODE_DIR+'client/index.js', { read: false })
         .pipe(browserify({
             debug: DEBUG,
             insertGlobals: DEBUG,
         }));
 
-    var externalLibraries = gulp.src([
+    var external = gulp.src([
         './node_modules/long/dist/Long.js',
         './node_modules/bytebuffer/dist/ByteBufferAB.js',
         './node_modules/protobufjs/dist/ProtoBuf.js',
@@ -31,90 +62,14 @@ var clientJS = function() {
         './node_modules/underscore/underscore.js'
     ]);
 
-    var result = merge(clientLibraries, externalLibraries);
+    var javascript = merge(external, compiled)
+        .pipe(cCoffee())
+        .pipe(cMinify());
+    var included = merge(javascript, css)
+        .pipe(gulp.dest(BUILD_DIR+'client/'));
+    var html = gulp.src(CODE_DIR+'client/index.html')
+        .pipe(inject(included, {ignorePath: BUILD_DIR+'client/'}))
 
-    if (!DEBUG) {
-        result = result
-            .pipe(concat('client.js'))
-            .pipe(uglify());
-    }
-
-    return result;
-};
-
-
-gulp.task('index', function () {
-    var target = gulp.src(CODE_DIR+'client/index.html');
-
-    var otherSources = gulp.src(
-        [
-            CODE_DIR+'client/index.css',
-            CODE_DIR+'shared/line/messages.proto'
-        ]
-    )
-
-    var sources = merge(clientJS(), otherSources)
-        .pipe(gulp.dest(BUILD_DIR+'client/static/'));
-
-    return target.pipe(inject(sources, {ignorePath: BUILD_DIR+'client/'}))
+    return merge(all, html, included)
         .pipe(gulp.dest(BUILD_DIR+'client/'));
 });
-
-
-gulp.task('server', function(){
-    var server, world;
-    server = gulp.src(CODE_DIR+'server/**/*.js')
-        .pipe(gulp.dest(BUILD_DIR+'server/'))
-
-    shared = gulp.src(CODE_DIR+'shared/**/*.js')
-    sharedCoffee = gulp.src(CODE_DIR+'shared/**/*.coffee')
-        .pipe(coffee())
-    merge(shared, sharedCoffee)
-        .pipe(gulp.dest(BUILD_DIR+'shared/'))
-
-    worldCoffee = gulp.src(CODE_DIR+'world/**/*.coffee')
-        .pipe(coffee())
-        .pipe(gulp.dest(BUILD_DIR+'world/'))
-
-    world = gulp.src(CODE_DIR+'world/**/*.js')
-        .pipe(gulp.dest(BUILD_DIR+'world/'))
-
-
-    return merge(server, world);
-});
-
-
-gulp.task('assets', function(){
-    return gulp.src(CODE_DIR+'client/assets/**/*')
-        .pipe(gulp.dest(BUILD_DIR+'client/assets/'))
-})
-
-
-gulp.task('run', ['default'], function(){
-    server.run({
-        file: BUILD_DIR+'server/index.js'
-    });
-    return gulp.watch(BUILD_DIR+'**/*', debounce(server.run))
-})
-
-gulp.task('test', ['default'], function(){
-    moveTests = gulp.src('test/**/*.js')
-        .pipe(gulp.dest(BUILD_DIR+'test/'))
-    tests = gulp.src(BUILD_DIR+'test/**/*.js', {read: false})
-        .pipe(mocha());
-    return merge(moveTests, tests);
-});
-
-gulp.task('watch', ['default'], function(){
-    return gulp.watch(
-        [CODE_DIR+'/**/*'],
-        ['default']
-    )
-})
-
-gulp.task('clean', function(){
-    return gulp.src(BUILD_DIR+'', {read: false})
-        .pipe(clean());
-})
-
-gulp.task('default', ['index', 'assets', 'server'])
