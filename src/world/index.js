@@ -2,9 +2,6 @@ Physics = require('PhysicsJS');
 
 var world = Physics();
 
-b = Physics.body('circle', {});
-world.add(b);
-
 
 var worldStep = function(){
     var lastTime = new Date().getMilliseconds(),
@@ -15,5 +12,6 @@ var worldStep = function(){
     return setInterval(step, 100);
 }
 worldStep();
+
 
 module.exports = world;

@@ -5,10 +5,13 @@ var gulp = require('gulp'),
     browserify = require('gulp-browserify'),
     uglify = require('gulp-uglify'),
     concat = require('gulp-concat'),
-    clean = require('gulp-clean');
+    coffee = require('gulp-coffee'),
+    clean = require('gulp-clean'),
+    debounce = require('debounce'),
+    mocha = require('gulp-mocha');
 
 var DEBUG = true;
-var CODE_DIR = './src/'
+var CODE_DIR = 'src/'
 var BUILD_DIR = '_build/'
 
 var clientJS = function() {
@@ -62,8 +65,20 @@ gulp.task('server', function(){
     var server, world;
     server = gulp.src(CODE_DIR+'server/**/*.js')
         .pipe(gulp.dest(BUILD_DIR+'server/'))
+
+    shared = gulp.src(CODE_DIR+'shared/**/*.js')
+    sharedCoffee = gulp.src(CODE_DIR+'shared/**/*.coffee')
+        .pipe(coffee())
+    merge(shared, sharedCoffee)
+        .pipe(gulp.dest(BUILD_DIR+'shared/'))
+
+    worldCoffee = gulp.src(CODE_DIR+'world/**/*.coffee')
+        .pipe(coffee())
+        .pipe(gulp.dest(BUILD_DIR+'world/'))
+
     world = gulp.src(CODE_DIR+'world/**/*.js')
         .pipe(gulp.dest(BUILD_DIR+'world/'))
+
 
     return merge(server, world);
 });
@@ -79,13 +94,20 @@ gulp.task('run', ['default'], function(){
     server.run({
         file: BUILD_DIR+'server/index.js'
     });
-    gulp.watch(BUILD_DIR+'**/*', server.run)
+    return gulp.watch(BUILD_DIR+'**/*', debounce(server.run))
 })
 
+gulp.task('test', ['default'], function(){
+    moveTests = gulp.src('test/**/*.js')
+        .pipe(gulp.dest(BUILD_DIR+'test/'))
+    tests = gulp.src(BUILD_DIR+'test/**/*.js', {read: false})
+        .pipe(mocha());
+    return merge(moveTests, tests);
+});
 
 gulp.task('watch', ['default'], function(){
-    gulp.watch(
-        [CODE_DIR],
+    return gulp.watch(
+        [CODE_DIR+'/**/*'],
         ['default']
     )
 })
