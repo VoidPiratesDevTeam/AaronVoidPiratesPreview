@@ -9,6 +9,7 @@ var gulp = require('gulp'),
     clean = require('gulp-clean'),
     debounce = require('debounce'),
     gIf = require('gulp-if'),
+    rename = require('gulp-rename'),
     mocha = require('gulp-mocha');
 
 var DEBUG = true;
@@ -21,7 +22,7 @@ var cMinify = function(){return gIf(!DEBUG, merge(concat('index.out.js'), uglify
 
 gulp.task('default', ['server', 'client']);
 
-gulp.task('watch', function(){
+gulp.task('watch', ['default'], function(){
     return gulp.watch([CODE_DIR+'/**/*'], ['default']);
 });
 
@@ -30,7 +31,7 @@ gulp.task('clean', function() {
         .pipe(clean())
 })
 
-gulp.task('run', function() {
+gulp.task('run', ['default'], function() {
     server.run({file: BUILD_DIR+'server/server/index.js'});
     return gulp.watch(BUILD_DIR+'**/*', debounce(server.run))
 });
@@ -46,11 +47,13 @@ gulp.task('client', function() {
 
     var css = gulp.src([CODE_DIR+'/client/**/*.css'])
 
-    var compiled = gulp.src(CODE_DIR+'client/index.js', { read: false })
+    var compiled = gulp.src(CODE_DIR+'client/index.coffee', { read: false })
         .pipe(browserify({
+            transform: ['coffeeify'],
             debug: DEBUG,
             insertGlobals: DEBUG,
-        }));
+        }))
+        .pipe(rename({extname: '.js'}));
 
     var external = gulp.src([
         './node_modules/long/dist/Long.js',
@@ -63,7 +66,7 @@ gulp.task('client', function() {
     ]);
 
     var javascript = merge(external, compiled)
-        .pipe(cCoffee())
+        // .pipe(cCoffee())
         .pipe(cMinify());
     var included = merge(javascript, css)
         .pipe(gulp.dest(BUILD_DIR+'client/'));
