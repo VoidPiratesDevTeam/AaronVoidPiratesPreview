@@ -45,6 +45,8 @@ gulp.task('server', function() {
 gulp.task('client', function() {
     var all = gulp.src([CODE_DIR+'/client/**/*'])
 
+    var proto = gulp.src([CODE_DIR+'/utils/*.proto'])
+
     var css = gulp.src([CODE_DIR+'/client/**/*.css'])
 
     var compiled = gulp.src(CODE_DIR+'client/index.coffee', { read: false })
@@ -68,7 +70,7 @@ gulp.task('client', function() {
     var javascript = merge(external, compiled)
         // .pipe(cCoffee())
         .pipe(cMinify());
-    var included = merge(javascript, css)
+    var included = merge(javascript, css, proto)
         .pipe(gulp.dest(BUILD_DIR+'client/'));
     var html = gulp.src(CODE_DIR+'client/index.html')
         .pipe(inject(included, {ignorePath: BUILD_DIR+'client/'}))

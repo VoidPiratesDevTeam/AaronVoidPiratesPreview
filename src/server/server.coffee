@@ -9,3 +9,12 @@ path = require 'path'
 app.use express.static path.join __dirname, '..', '..', 'client'
 
 server.listen 8000
+
+
+io.on 'connection', (socket) ->
+    console.log socket.idenity
+    socket.on 'identity', (data) ->
+        console.log data
+        if data is null
+            socket.emit 'nameClient', 13
+    socket.emit 'identifyClient'
